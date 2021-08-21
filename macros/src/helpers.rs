@@ -1,7 +1,48 @@
-use darling::{ast::Data, FromDeriveInput, FromMeta, ToTokens};
+use darling::{FromDeriveInput, ToTokens};
+use heck::SnekCase;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::DeriveInput;
+
+#[derive(FromDeriveInput)]
+#[darling(attributes(assoc))]
+pub struct Assoc {
+    ident: syn::Ident,
+    id: u64,
+}
+
+impl ToTokens for Assoc {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let name = &self.ident;
+        let id = self.id;
+        let assoc_name = syn::Ident::new(&format!("Assoc{}", &self.ident), self.ident.span());
+        let fn_name = syn::Ident::new(&name.to_string().to_snek_case(), self.ident.span());
+        let new_stuff = quote! {
+            impl AsRef<RawAssoc> for #name<Saved<RawAssoc>> {
+                fn as_ref(&self) -> &RawAssoc {
+                    &self.0
+                }
+            }
+
+            pub trait #assoc_name {
+                fn #fn_name<Ent: Entity>(&self, what: &Ent) -> #name<Dirty>;
+            }
+
+            impl<T> #assoc_name for T where T: Entity {
+                fn #fn_name<Ent: Entity>(&self, what: &Ent) -> #name<Dirty> {
+                    #name(
+                        RawAssoc {
+                            from: self.to_entity(),
+                            to: what.to_entity(),
+                            ty: #id,
+                        },
+                        Dirty,
+                    )
+                }
+            }
+        };
+        tokens.extend(new_stuff)
+    }
+}
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(entity))]
@@ -21,6 +62,22 @@ impl ToTokens for Entity {
             pub struct #ent_name<S: PersistedState> {
                 ent: #name,
                 db_state: S,
+            }
+
+            impl Save<RawEntity> for #ent_name<Dirty> {
+                type Saved = #ent_name<Saved<RawEntity>>;
+                fn save(self, db: &mut dyn tea::TeaConnection) -> tea::Result<Self::Saved, SaveError<Self>> {
+                    #ent_name::from(self).save(db)
+                }
+            }
+
+            impl From<#name> for #ent_name<Dirty> {
+                fn from(t: #name) -> #ent_name<Dirty> {
+                    Self {
+                        ent: t,
+                        db_state: Dirty
+                    }
+                }
             }
 
             impl Save<RawEntity> for #name {
@@ -56,8 +113,10 @@ impl ToTokens for Entity {
                 }
             }
 
+            use crate::ToEntity as _;
+
             #[automatically_derived]
-            impl ToEntity for #name {
+            impl crate::ToEntity for #name {
                 type Entity = #ent_name<Dirty>;
 
                 fn entity_type() -> EntityType {

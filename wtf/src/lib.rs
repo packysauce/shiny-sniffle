@@ -1,13 +1,6 @@
-use serde::{Deserializer, Serializer};
-use tea::{EntityId, EntityType};
-
 //#![allow(unused)]
 
 mod demo;
-// there's always a lighthouse...
-pub trait Database {
-    type Error: std::error::Error;
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Dirty;
@@ -15,12 +8,7 @@ pub struct Dirty;
 #[derive(Debug)]
 pub struct Saved<Id: std::fmt::Debug>(Id);
 
-mod private {
-    pub trait Sealed {}
-    impl Sealed for super::Dirty {}
-    impl<Id: std::fmt::Debug> Sealed for super::Saved<Id> {}
-}
-pub trait PersistedState: private::Sealed {}
+pub trait PersistedState {}
 impl PersistedState for Dirty {}
 impl<Id: std::fmt::Debug> PersistedState for Saved<Id> {}
 
@@ -29,55 +17,6 @@ pub trait Storage {
     type Error;
 }
 
-pub trait IntoDbError: From<serde_json::Error> + From<tea::TeaError> {}
-impl<T> IntoDbError for T where T: From<serde_json::Error> + From<tea::TeaError> {}
-
-pub trait EntityStorage<E: IntoDbError>: Storage<Id = RawEntity, Error = E> {}
-pub trait AssocStorage<E: IntoDbError>: Storage<Id = RawAssoc, Error = E> {}
-
-#[derive(Debug, ::serde::Serialize, ::serde::Deserialize)]
-struct Landmark<S: PersistedState> {
-    name: String,
-    country: String,
-    #[serde(skip)]
-    db_state: S,
-}
-
-impl Landmark<Dirty> {
-    fn save<E: IntoDbError>(
-        self,
-        db: &mut dyn tea::TeaConnection,
-    ) -> Result<Landmark<Saved<RawEntity>>, E> {
-        let data = serde_json::to_vec(&self)?;
-        let ty = EntityType::from(&self);
-        let id = db.ent_add(ty, &data)?;
-        Ok(Landmark {
-            db_state: Saved(RawEntity { id, ty }),
-            name: self.name,
-            country: self.country,
-        })
-    }
-}
-
-impl From<&Landmark<Dirty>> for tea::EntityType {
-    fn from(_: &Landmark<Dirty>) -> Self {
-        tea::EntityType::from_u64(15).unwrap()
-    }
-}
-
-impl Entity for Landmark<Saved<RawEntity>> {
-    fn to_entity(&self) -> RawEntity {
-        self.db_state.0
-    }
-
-    fn ty(&self) -> tea::EntityType {
-        self.db_state.0.ty
-    }
-
-    fn id(&self) -> tea::EntityId {
-        self.db_state.0.id
-    }
-}
 /// An entity, at the atomic level.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RawEntity {
@@ -85,6 +24,13 @@ pub struct RawEntity {
     /// the entity's ID - this is globally unique
     id: tea::EntityId, // i have 100% thought of this as subnet
     ty: tea::EntityType, // and host and you bet your fuckin biscuits i will try it out
+}
+
+pub trait ToEntity {
+    type Entity;
+
+    fn entity_type() -> tea::EntityType;
+    fn ent(self) -> Self::Entity;
 }
 
 /// An Entity consts of a grand total of 128 bits of data.

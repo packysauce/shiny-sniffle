@@ -1,3 +1,4 @@
+use crate::Assoc;
 use crate::PersistedState;
 use crate::RawEntity;
 use crate::Save;
@@ -9,9 +10,12 @@ use super::Entity;
 use super::RawAssoc;
 use rusqlite::DatabaseName;
 use serde::{Deserialize, Serialize};
+use tea::AssocType;
 use tea::EntityType;
 use tea::TeaConnection;
 
+#[derive(macros::Assoc, Debug)]
+#[assoc(id = 1)]
 pub struct Authored<S: PersistedState>(RawAssoc, S);
 impl<S: PersistedState> PartialEq for Authored<S> {
     fn eq(&self, other: &Self) -> bool {
@@ -19,52 +23,14 @@ impl<S: PersistedState> PartialEq for Authored<S> {
     }
 }
 
+#[derive(macros::Assoc, Debug)]
+#[assoc(id = 2)]
 pub struct AuthoredBy<S: PersistedState>(RawAssoc, S);
 impl<S: PersistedState> PartialEq for AuthoredBy<S> {
     fn eq(&self, other: &Self) -> bool {
         self.0.to == other.0.to
     }
 }
-
-impl AsRef<RawAssoc> for AuthoredBy<Saved<RawAssoc>> {
-    fn as_ref(&self) -> &RawAssoc {
-        &self.0
-    }
-}
-
-pub trait AuthoredAssoc {
-    fn authored<Ent: Entity>(&self, what: &Ent) -> Authored<Dirty>;
-    fn authored_by<Ent: Entity>(&self, what: &Ent) -> AuthoredBy<Dirty>;
-}
-
-// never one, without the other
-impl<T> AuthoredAssoc for T
-where
-    T: Entity,
-{
-    fn authored<Ent: Entity>(&self, what: &Ent) -> Authored<Dirty> {
-        Authored(
-            RawAssoc {
-                from: self.to_entity(),
-                to: what.to_entity(),
-                ty: 1,
-            },
-            Dirty,
-        )
-    }
-
-    fn authored_by<Ent: Entity>(&self, what: &Ent) -> AuthoredBy<Dirty> {
-        AuthoredBy(
-            RawAssoc {
-                from: self.to_entity(),
-                to: what.to_entity(),
-                ty: 2,
-            },
-            Dirty,
-        )
-    }
-}
-
 #[derive(macros::Entity, Debug, Serialize, Deserialize)]
 #[entity(id = 11)]
 pub struct Book {
@@ -99,13 +65,6 @@ impl Person {
     }
 }
 
-pub trait ToEntity {
-    type Entity;
-
-    fn entity_type() -> EntityType;
-    fn ent(self) -> Self::Entity;
-}
-
 impl Comment {
     pub fn new(s: &str) -> Self {
         Self {
@@ -132,7 +91,18 @@ impl Play {
     }
 }
 
-#[test]
+impl Save<()> for AuthoredBy<Dirty> {
+    type Saved = AuthoredBy<Saved<()>>;
+
+    fn save(self, db: &mut dyn tea::TeaConnection) -> Result<Self::Saved, SaveError<Self>> {
+        let Self(RawAssoc { from, to, ty }, _) = self;
+        if let Err(e) = db.assoc_add(AssocType::from_u64(ty).unwrap(), from.id, to.id, &[]) {
+            return Err(SaveError::Tea(self, e));
+        }
+        Ok(AuthoredBy(RawAssoc { from, to, ty }, Saved(())))
+    }
+}
+
 fn testing() -> anyhow::Result<()> {
     let mut db = rusqlite::Connection::open_in_memory()?;
     db.initialize()?;
@@ -148,16 +118,12 @@ fn testing() -> anyhow::Result<()> {
     .save(&mut db)?;
 
     // set all them assocs up
-    let assocs = vec![
-        comment.authored_by(&person),
-        play.authored_by(&person),
-        book.authored_by(&person),
-    ];
+    let comment_author = comment.authored_by(&person).save(&mut db)?;
+    let play_author = play.authored_by(&person).save(&mut db)?;
+    let book_author = book.authored_by(&person).save(&mut db)?;
 
-    let comment_author = &assocs[0];
-    let play_author = &assocs[1];
-    let book_author = &assocs[2];
     assert!(comment_author == play_author && play_author == book_author);
-    db.backup(DatabaseName::Main, "thingy.sqlite", None).unwrap();
+    db.backup(DatabaseName::Main, "thingy.sqlite", None)
+        .unwrap();
     Ok(())
 }
