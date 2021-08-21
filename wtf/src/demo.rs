@@ -7,15 +7,24 @@ use crate::Saved;
 pub use super::Dirty;
 use super::Entity;
 use super::RawAssoc;
+use rusqlite::DatabaseName;
 use serde::{Deserialize, Serialize};
 use tea::EntityType;
 use tea::TeaConnection;
 
-#[derive(PartialEq)]
 pub struct Authored<S: PersistedState>(RawAssoc, S);
+impl<S: PersistedState> PartialEq for Authored<S> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.from == other.0.from
+    }
+}
 
-#[derive(PartialEq)]
 pub struct AuthoredBy<S: PersistedState>(RawAssoc, S);
+impl<S: PersistedState> PartialEq for AuthoredBy<S> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.to == other.0.to
+    }
+}
 
 impl AsRef<RawAssoc> for AuthoredBy<Saved<RawAssoc>> {
     fn as_ref(&self) -> &RawAssoc {
@@ -148,8 +157,7 @@ fn testing() -> anyhow::Result<()> {
     let comment_author = &assocs[0];
     let play_author = &assocs[1];
     let book_author = &assocs[2];
-
     assert!(comment_author == play_author && play_author == book_author);
-
+    db.backup(DatabaseName::Main, "thingy.sqlite", None).unwrap();
     Ok(())
 }
