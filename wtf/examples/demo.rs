@@ -86,9 +86,8 @@ impl Play {
 fn main() -> anyhow::Result<()> {
     let mut db = rusqlite::Connection::open_in_memory()?;
     db.initialize()?;
-    // what a cool dude!
-    let person = Person::new("james maxwell").save(&mut db)?;
-    // lets make some stuff he did!
+    // The generated types aren't all that yucky
+    let person: EntPerson<wtf::Saved<wtf::RawEntity>> = Person::new("james maxwell").save(&mut db)?;
     let comment = Comment::new("buzz buzz").save(&mut db)?;
     let play = Play::new("so you think you can play", "this time its personal").save(&mut db)?;
     let book = Book::new(
