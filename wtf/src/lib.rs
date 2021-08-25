@@ -6,9 +6,11 @@ mod tea_reexports {
 
 pub use crate::tea_reexports::*;
 
+/// Implementation of `PersistedState` indicating the data is unsaved
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Dirty;
 
+/// Implementation of `PersistedState` indicating the data is commited.
 #[derive(Debug)]
 pub struct Saved<Id: std::fmt::Debug>(Id);
 
@@ -18,14 +20,10 @@ impl<Id: std::fmt::Debug> Saved<Id> {
     }
 }
 
+/// Marker trait for Ent typestates
 pub trait PersistedState {}
 impl PersistedState for Dirty {}
 impl<Id: std::fmt::Debug> PersistedState for Saved<Id> {}
-
-pub trait Storage {
-    type Id;
-    type Error;
-}
 
 /// An entity, at the atomic level.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -50,11 +48,12 @@ impl RawEntity {
     }
 }
 
+/// If you have a well known type ID, and are Serialize + Deserialize, you can become an Ent!
 pub trait ToEntity {
     type Entity;
 
     fn entity_type() -> EntityType;
-    fn ent(self) -> Self::Entity;
+    fn into_entity(self) -> Self::Entity;
 }
 
 /// An Entity consts of a grand total of 128 bits of data.
@@ -62,16 +61,18 @@ pub trait ToEntity {
 pub trait Entity {
     fn ty(&self) -> EntityType;
     fn id(&self) -> EntityId;
-    fn to_entity(&self) -> RawEntity;
+    fn entity(&self) -> RawEntity;
 }
-// Assocations are merely 2 objects and the nature of assocation
 /// Storage of an assocation. If you think of an assocation as an arrow,
 /// then the base of the arrow is the "from" entity, and the "to" entity
 /// is being pointed at by the arrow.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RawAssoc {
+    // In TAO parlance, id1
     pub from: RawEntity,
+    // In TAO parlance, id2
     pub to: RawEntity,
+    // In TAO parlance, atype
     ty: AssocType,
 }
 
@@ -83,10 +84,11 @@ impl RawAssoc {
     }
 }
 
+/// If you can tell me what you are and what 2 entities you describe, you can be an Assoc!
 pub trait Assoc {
     fn obj1(&self) -> RawEntity;
     fn obj2(&self) -> RawEntity;
-    fn to_assoc(&self) -> RawAssoc;
+    fn assoc(&self) -> RawAssoc;
 }
 
 impl Assoc for RawAssoc {
@@ -98,7 +100,7 @@ impl Assoc for RawAssoc {
         self.to
     }
 
-    fn to_assoc(&self) -> RawAssoc {
+    fn assoc(&self) -> RawAssoc {
         *self
     }
 }
@@ -115,8 +117,8 @@ where
         self.as_ref().obj2()
     }
 
-    fn to_assoc(&self) -> RawAssoc {
-        self.as_ref().to_assoc()
+    fn assoc(&self) -> RawAssoc {
+        self.as_ref().assoc()
     }
 }
 
@@ -130,6 +132,7 @@ pub enum SaveError<T: std::fmt::Debug> {
 
 pub type SaveResult<T> = std::result::Result<T, SaveError<T>>;
 
+/// Save is how the object -> database serialization goes
 pub trait Save<Id>: Sized + std::fmt::Debug {
     type Saved: Sized + std::fmt::Debug;
 

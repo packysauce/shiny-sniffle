@@ -47,8 +47,8 @@ impl ToTokens for Assoc {
                 fn #fn_name<Ent: ::wtf::Entity>(&self, what: &Ent) -> #name<::wtf::Dirty> {
                     #name(
                         ::wtf::RawAssoc::new(
-                            Self::to_entity(self),
-                            Ent::to_entity(what),
+                            Self::entity(self),
+                            Ent::entity(what),
                             #id,
                         ),
                         ::wtf::Dirty,
@@ -124,7 +124,7 @@ impl ToTokens for Entity {
                 fn id(&self) -> ::tea::EntityId {
                     self.db_state.as_ref().id()
                 }
-                fn to_entity(&self) -> ::wtf::RawEntity {
+                fn entity(&self) -> ::wtf::RawEntity {
                     *self.db_state.as_ref()
                 }
             }
@@ -137,7 +137,7 @@ impl ToTokens for Entity {
                     wtf::EntityType::from_u64(#id).expect("bad id")
                 }
 
-                fn ent(self) -> Self::Entity {
+                fn into_entity(self) -> Self::Entity {
                     #ent_name {
                         ent: self,
                         db_state: ::wtf::Dirty,
