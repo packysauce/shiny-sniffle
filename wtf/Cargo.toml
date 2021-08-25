@@ -1,0 +1,21 @@
+[package]
+name = "wtf"
+version = "0.1.0"
+edition = "2018"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# infuser = { path ="repo/src/infra/infuser" }
+anyhow = "*"
+chrono = "*"
+darling = "*"
+postcard = "0.7.2"
+proc-macro2 = "1.0.28"
+quote = "1.0.9"
+rusqlite = "*"
+serde = { version = "*", features = ["derive"]}
+serde_json = "*"
+syn = { version = "1.0.74", features = ["full", "extra-traits"] }
+thiserror = "*"
+tea = { path = "../repo/src/infra/tea", default-features = false }
+macros = { path = "../macros" }
