@@ -1,20 +1,12 @@
-use crate::Assoc;
-use crate::PersistedState;
-use crate::RawEntity;
-use crate::Save;
-use crate::SaveError;
-use crate::Saved;
-
-pub use super::Dirty;
-use super::Entity;
-use super::RawAssoc;
+use macros::{Assoc, Entity};
 use rusqlite::DatabaseName;
 use serde::{Deserialize, Serialize};
-use tea::AssocType;
-use tea::EntityType;
-use tea::TeaConnection;
+use wtf::Save;
+use wtf::TeaConnection;
+use wtf::ToEntity;
+use wtf::{PersistedState, RawAssoc};
 
-#[derive(macros::Assoc, Debug)]
+#[derive(Assoc, Debug)]
 #[assoc(id = 1)]
 pub struct Authored<S: PersistedState>(RawAssoc, S);
 impl<S: PersistedState> PartialEq for Authored<S> {
@@ -23,7 +15,7 @@ impl<S: PersistedState> PartialEq for Authored<S> {
     }
 }
 
-#[derive(macros::Assoc, Debug)]
+#[derive(Assoc, Debug)]
 #[assoc(id = 2)]
 pub struct AuthoredBy<S: PersistedState>(RawAssoc, S);
 impl<S: PersistedState> PartialEq for AuthoredBy<S> {
@@ -31,7 +23,7 @@ impl<S: PersistedState> PartialEq for AuthoredBy<S> {
         self.0.to == other.0.to
     }
 }
-#[derive(macros::Entity, Debug, Serialize, Deserialize)]
+#[derive(Entity, Debug, Serialize, Deserialize)]
 #[entity(id = 11)]
 pub struct Book {
     title: String,
@@ -91,25 +83,13 @@ impl Play {
     }
 }
 
-impl Save<()> for AuthoredBy<Dirty> {
-    type Saved = AuthoredBy<Saved<()>>;
-
-    fn save(self, db: &mut dyn tea::TeaConnection) -> Result<Self::Saved, SaveError<Self>> {
-        let Self(RawAssoc { from, to, ty }, _) = self;
-        if let Err(e) = db.assoc_add(AssocType::from_u64(ty).unwrap(), from.id, to.id, &[]) {
-            return Err(SaveError::Tea(self, e));
-        }
-        Ok(AuthoredBy(RawAssoc { from, to, ty }, Saved(())))
-    }
-}
-
-fn testing() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     let mut db = rusqlite::Connection::open_in_memory()?;
     db.initialize()?;
     // what a cool dude!
     let person = Person::new("james maxwell").save(&mut db)?;
     // lets make some stuff he did!
-    let comment = Comment::new("cant wait to pat your sexy butt later").save(&mut db)?;
+    let comment = Comment::new("buzz buzz").save(&mut db)?;
     let play = Play::new("so you think you can play", "this time its personal").save(&mut db)?;
     let book = Book::new(
         "magnets!",

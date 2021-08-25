@@ -17,5 +17,5 @@ serde = { version = "*", features = ["derive"]}
 serde_json = "*"
 syn = { version = "1.0.74", features = ["full", "extra-traits"] }
 thiserror = "*"
-tea = { path = "../repo/src/infra/tea" }
+tea = { path = "../repo/src/infra/tea", default-features = false }
 macros = { path = "../macros" }
