@@ -1,0 +1,26 @@
+[package]
+edition = "2018"
+name    = "config"
+publish = false
+version = "1.0.0"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+anyhow             = "*"
+ctor               = "*"
+lazy_static        = "*"
+log                = "*"
+paste              = "*"
+ron                = "*"
+serde              = "*"
+
+[dependencies.config-macros]
+path = "./macros"
+
+[dev-dependencies]
+trybuild = "*"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.export_everywhere]
+path = "../export_everywhere"

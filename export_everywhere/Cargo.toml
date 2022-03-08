@@ -1,0 +1,22 @@
+[package]
+authors = ["Ludum Ipsum <devs@ludumipsum.com>"]
+edition = "2018"
+name    = "export_everywhere"
+version = "1.0.0"
+
+[lib]
+path       = "lib.rs"
+proc-macro = true
+
+[dependencies]
+cfg-if      = "*"
+proc-macro2 = "*"
+quote       = "*"
+syn         = { version = "*", features = ["full"] }
+
+[dev-dependencies]
+trybuild = "*"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen               = "*"
+wasm-bindgen-macro-support = "*"

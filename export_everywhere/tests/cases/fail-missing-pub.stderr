@@ -1,0 +1,5 @@
+error: fn `my_function` must be marked `pub` to export_everywhere
+ --> $DIR/fail-missing-pub.rs:4:11
+  |
+4 | extern fn my_function() {
+  |           ^^^^^^^^^^^

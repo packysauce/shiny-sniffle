@@ -1,0 +1,17 @@
+[package]
+authors     = ["Ludum Ipsum <dev@ludumipsum.com>"]
+description = "An undiscovered masterpiece"
+edition     = "2018"
+name        = "config-macros"
+publish     = false
+version     = "1.0.0"
+
+[lib]
+path       = "lib.rs"
+proc-macro = true
+
+[dependencies]
+cfg-if      = "*"
+proc-macro2 = "*"
+quote       = "*"
+syn         = { version = "*", features = ["full"] }

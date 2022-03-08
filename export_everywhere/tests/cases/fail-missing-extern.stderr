@@ -1,0 +1,5 @@
+error: fn `my_function` must be marked `extern` to export_everywhere
+ --> $DIR/fail-missing-extern.rs:4:8
+  |
+4 | pub fn my_function() {
+  |        ^^^^^^^^^^^

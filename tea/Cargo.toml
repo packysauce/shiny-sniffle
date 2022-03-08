@@ -1,0 +1,23 @@
+[package]
+authors     = ["Ludum Ipsum <dev@ludumipsum.com>"]
+description = "An undiscovered masterpiece"
+edition     = "2021"
+name        = "tea"
+publish     = false
+version     = "1.0.0"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+anyhow    = "*"
+chrono    = "*"
+serde     = { version = "*", features = ["derive"] }
+thiserror = "*"
+rusqlite = { version = "*", optional = true, features = ["limits"] }
+itertools = "*"
+config = { path = "../config" }
+log = "*"
+
+[features]
+sqlite = ["rusqlite"]
