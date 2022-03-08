@@ -1,28 +1,18 @@
-use macros::{Assoc, Entity};
 use rusqlite::DatabaseName;
 use serde::{Deserialize, Serialize};
-use wtf::Save;
-use wtf::TeaConnection;
-use wtf::ToEntity;
-use wtf::{PersistedState, RawAssoc};
+use wtf::{Ent, SaveEnt, TeaConnection};
+use wtf_macros::Entity;
 
-#[derive(Assoc, Debug)]
-#[assoc(id = 1)]
-pub struct Authored<S: PersistedState>(RawAssoc, S);
-impl<S: PersistedState> PartialEq for Authored<S> {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.from == other.0.from
-    }
+#[wtf_macros::assoc(id = 1)]
+pub trait Authored<F, T>
+where
+    T: ::wtf::EntityTypeID,
+    F: ::wtf::EntityTypeID,
+{
+    fn authored_by(&self, who: &Ent<T>);
+    fn authored(&self, what: &Ent<T>);
 }
 
-#[derive(Assoc, Debug)]
-#[assoc(id = 2)]
-pub struct AuthoredBy<S: PersistedState>(RawAssoc, S);
-impl<S: PersistedState> PartialEq for AuthoredBy<S> {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.to == other.0.to
-    }
-}
 #[derive(Entity, Debug, Serialize, Deserialize)]
 #[entity(id = 11)]
 pub struct Book {
@@ -30,20 +20,20 @@ pub struct Book {
     description: String,
 }
 
-#[derive(macros::Entity, Debug, Serialize, Deserialize)]
+#[derive(Entity, Debug, Serialize, Deserialize)]
 #[entity(id = 12)]
 pub struct Play {
     title: String,
     description: String,
 }
 
-#[derive(macros::Entity, Debug, Serialize, Deserialize)]
+#[derive(Entity, Debug, Serialize, Deserialize)]
 #[entity(id = 13)]
 pub struct Comment {
     text: String,
 }
 
-#[derive(macros::Entity, Debug, Serialize, Deserialize)]
+#[derive(Entity, Debug, Serialize, Deserialize)]
 #[entity(id = 10)]
 pub struct Person {
     name: String,
@@ -84,10 +74,10 @@ impl Play {
 }
 
 fn main() -> anyhow::Result<()> {
-    let mut db = rusqlite::Connection::open_in_memory()?;
-    db.initialize()?;
+    let mut db = tea::sqlite::TeaSqliteConnection::new_in_memory()?;
+    TeaConnection::initialize(&mut db)?;
     // The generated types aren't all that yucky
-    let person: EntPerson<wtf::Saved<wtf::RawEntity>> = Person::new("james maxwell").save(&mut db)?;
+    let person: Ent<Person> = Person::new("james maxwell").save(&mut db)?;
     let comment = Comment::new("buzz buzz").save(&mut db)?;
     let play = Play::new("so you think you can play", "this time its personal").save(&mut db)?;
     let book = Book::new(
