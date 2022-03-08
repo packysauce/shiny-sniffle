@@ -18,4 +18,4 @@ serde_json = "*"
 syn = { version = "1.0.74", features = ["full", "extra-traits"] }
 thiserror = "*"
 tea = { path = "../tea", features = ["sqlite"] }
-macros = { path = "../macros" }
+wtf-macros = { path = "../wtf-macros" }
