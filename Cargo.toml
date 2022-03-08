@@ -3,5 +3,4 @@
 members = [
   "macros",
   "wtf",
-  "repo/src/infra/tea"
   ]
