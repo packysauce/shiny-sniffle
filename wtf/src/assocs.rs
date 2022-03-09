@@ -14,27 +14,27 @@ pub trait AssocTypeID {
     const TYPE_ID: u64;
 }
 
-pub struct Assoc<A: AssocTypeID, F, T, S: PersistedState = Dirty>
+pub struct Assoc<'from, 'to, F, A: AssocTypeID, T, S: PersistedState = Dirty>
 where
     A: AssocTypeID,
     F: EntityTypeID,
     T: EntityTypeID,
     S: PersistedState,
 {
-    pub from: Ent<F>,
-    pub to: Ent<T>,
+    pub from: &'from Ent<F>,
+    pub to: &'to Ent<T>,
 
     state: PhantomData<S>,
     kind: PhantomData<A>,
 }
 
-impl<A, F, T> Assoc<A, F, T>
+impl<'from, 'to, F, A, T> Assoc<'from, 'to, F, A, T, Dirty>
 where
     A: AssocTypeID,
     F: EntityTypeID,
     T: EntityTypeID,
 {
-    pub fn new(from: Ent<F>, to: Ent<T>) -> Self {
+    pub fn new(from: &'from Ent<F>, to: &'to Ent<T>) -> Self {
         Self {
             from,
             to,
@@ -43,7 +43,7 @@ where
         }
     }
 
-    fn into_saved(self) -> Assoc<A, F, T, Saved<()>> {
+    fn into_saved(self) -> Assoc<'from, 'to, F, A, T, Saved<()>> {
         let Assoc { from, to, kind, .. } = self;
         Assoc {
             from,
@@ -54,20 +54,24 @@ where
     }
 }
 
-impl<A, F, T> Assoc<A, F, T, Dirty>
+impl<'db, 'from, 'to, F, A, T> Assoc<'from, 'to, F, A, T, Dirty>
 where
     A: AssocTypeID,
     F: EntityTypeID,
     T: EntityTypeID,
 {
-    pub fn save(self, db: &mut dyn TeaConnection) -> SaveResult<Assoc<A, F, T, Saved<()>>> {
-        let id1 = tea::EntityId::from_u64(self.from.id())?;
-        let id2 = tea::EntityId::from_u64(self.to.id())?;
+    pub fn save(
+        self,
+        db: &'db mut dyn TeaConnection,
+    ) -> SaveResult<Assoc<'from, 'to, F, A, T, Saved<()>>> {
+        let Assoc { from, to, .. } = self;
+        let id1 = tea::EntityId::from_u64(from.id())?;
+        let id2 = tea::EntityId::from_u64(to.id())?;
         let a_type = tea::AssocType::from_u64(A::TYPE_ID)?;
         if let Err(e) = db.assoc_add(a_type, id1, id2, &[]) {
             return Err(SaveError::Tea(e));
         }
-        let new_assoc = Assoc::new(self.from, self.to);
+        let new_assoc = Assoc::new(from, to);
         Ok(new_assoc.into_saved())
     }
 }
