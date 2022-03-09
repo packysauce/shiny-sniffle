@@ -10,5 +10,5 @@ mod tea_reexports {
 }
 
 pub use assocs::{Assoc, AssocTypeID};
-pub use entities::{Ent, EntityTypeID, Save as SaveEnt};
+pub use entities::{Ent, Entity, EntityTypeID, Save as SaveEnt};
 pub use state::{PersistedState, SaveError, Saved};
