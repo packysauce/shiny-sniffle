@@ -14,7 +14,7 @@ anyhow    = "*"
 chrono    = "*"
 serde     = { version = "*", features = ["derive"] }
 thiserror = "*"
-rusqlite = { version = "*", optional = true, features = ["limits"] }
+rusqlite = { version = "*", optional = true, features = ["limits", "backup"] }
 itertools = "*"
 config = { path = "../config" }
 log = "*"
