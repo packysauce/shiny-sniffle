@@ -4,7 +4,19 @@ use tea::TeaError;
 
 /// Implementation of `PersistedState` indicating the data is unsaved
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Dirty;
+pub struct Dirty<T = ()>(T);
+
+impl Dirty {
+    fn new() -> Dirty {
+        Dirty(())
+    }
+}
+
+impl Default for Dirty {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// Implementation of `PersistedState` indicating the data is commited.
 #[derive(Debug)]
