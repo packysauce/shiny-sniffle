@@ -1,4 +1,4 @@
-use darling::FromDeriveInput;
+use darling::{FromDeriveInput, ToTokens};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
@@ -26,6 +26,5 @@ pub fn assoc(args: TokenStream, input: TokenStream) -> TokenStream {
 pub fn make_assoc_macro(tokens: TokenStream) -> TokenStream {
     let input = parse_macro_input!(tokens as DeriveInput);
     let stuff = AssocDeriveInput::from_derive_input(&input).unwrap();
-    let t = quote!(#stuff);
-    t.into()
+    stuff.to_token_stream().into()
 }

@@ -1,47 +1,11 @@
 use rusqlite::DatabaseName;
 use serde::{Deserialize, Serialize};
-use wtf::{Assoc, AssocTypeID, Ent, EntityTypeID, SaveEnt, TeaConnection};
+use wtf::{Assoc, Ent, EntityTypeID, SaveEnt, TeaConnection};
 use wtf_macros::{Assoc, Entity};
 
 #[derive(Assoc)]
-#[assoc(id = 1)]
+#[assoc(id = 1, forward = "Authored", reverse = "AuthoredBy")]
 pub struct Author;
-
-pub trait Authored<'a, Id1, Id2>: EntityTypeID + Sized
-where
-    Id1: EntityTypeID,
-    Id2: EntityTypeID,
-{
-    fn authored(&'a self, other: &'a Ent<Id2>) -> AuthorAssoc<'a, '_, Id1, Id2>;
-}
-
-impl<'a, Id1, Id2> Authored<'a, Id1, Id2> for Ent<Id1>
-where
-    Id1: EntityTypeID + 'a,
-    Id2: EntityTypeID + 'a,
-{
-    fn authored(&'a self, other: &'a Ent<Id2>) -> Assoc<'a, '_, Id1, Author, Id2> {
-        Assoc::new(self, other)
-    }
-}
-
-pub trait AuthoredBy<'a, Id1, Id2>: EntityTypeID + Sized
-where
-    Id1: EntityTypeID,
-    Id2: EntityTypeID,
-{
-    fn authored_by(&'a self, other: &'a Ent<Id2>) -> Assoc<'a, '_, Id1, Author, Id2>;
-}
-
-impl<'a, Id1, Id2> AuthoredBy<'a, Id1, Id2> for Ent<Id1>
-where
-    Id1: EntityTypeID + 'a,
-    Id2: EntityTypeID + 'a,
-{
-    fn authored_by(&'a self, other: &'a Ent<Id2>) -> Assoc<'a, '_, Id1, Author, Id2> {
-        Assoc::new(self, other)
-    }
-}
 
 #[derive(Entity, Debug, Serialize, Deserialize)]
 #[entity(id = 11)]
