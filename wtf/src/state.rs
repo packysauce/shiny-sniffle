@@ -20,7 +20,7 @@ impl Default for Dirty {
 
 /// Implementation of `PersistedState` indicating the data is commited.
 #[derive(Debug)]
-pub struct Saved<Id: std::fmt::Debug>(pub(crate) Id);
+pub struct Saved<Id>(pub(crate) Id);
 
 impl<Id: std::fmt::Debug> Saved<Id> {
     pub fn new(id: Id) -> Self {
