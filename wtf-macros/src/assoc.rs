@@ -48,27 +48,13 @@ impl ToTokens for AssocDeriveInput {
         let fn_name = syn::Ident::new(&name.to_string().to_snake_case(), self.ident.span());
         let new_stuff = quote! {
             #[automatically_derived]
+            pub type #assoc_name<'f, 't, Id1, Id2> = ::wtf::assocs::Assoc<'f, 't, Id1, #name, Id2>;
+
+            #[automatically_derived]
             impl ::wtf::assocs::AssocTypeID for #name {
-                const TYPE_ID: u64 = #id;
+                const TYPE_ID: ::wtf::assocs::AssocType = #id;
             }
 
-            #[automatically_derived]
-            pub trait #assoc_name<F, T> {
-                fn #fn_name(&self, what: &::wtf::Ent<T>) -> ::wtf::Assoc<#assoc_name, F, T, ::wtf::Dirty>
-            }
-
-            #[automatically_derived]
-            impl<F, T> #assoc_name<F, T> for ::wtf::Ent<F>
-            {
-                fn #fn_name(&self, what: &::wtf::Ent<T>)
-                -> ::wtf::Assoc<#name, F, T, ::wtf::Dirty>
-                {
-                    ::wtf::Assoc::new(
-                        self.0,
-                        what.0,
-                    )
-                }
-            }
         };
         tokens.extend(new_stuff)
     }

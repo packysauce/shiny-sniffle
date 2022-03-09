@@ -1,14 +1,11 @@
 use rusqlite::DatabaseName;
 use serde::{Deserialize, Serialize};
 use wtf::{Assoc, AssocTypeID, Ent, EntityTypeID, SaveEnt, TeaConnection};
-use wtf_macros::Entity;
+use wtf_macros::{Assoc, Entity};
 
+#[derive(Assoc)]
+#[assoc(id = 1)]
 pub struct Author;
-pub type AuthorAssoc<'f, 't, Id1, Id2> = Assoc<'f, 't, Id1, Author, Id2>;
-
-impl AssocTypeID for Author {
-    const TYPE_ID: u64 = 1;
-}
 
 pub trait Authored<'a, Id1, Id2>: EntityTypeID + Sized
 where
